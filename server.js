@@ -2,11 +2,16 @@
 var express = require('express'),
     app     = express(),
     morgan  = require('morgan');
-    
+var session = require('express-session');
+var mongoose = require('mongoose');
+var MongoStore = require('connect-mongo')(session);
+var sch= require('./schema')
+var bodyParser = require('body-parser');
 Object.assign=require('object-assign')
 
 app.engine('html', require('ejs').renderFile);
 app.use(morgan('combined'))
+app.disable('etag');  // remove in production
 
 var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
     ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0',
@@ -33,7 +38,28 @@ if (mongoURL == null && process.env.DATABASE_SERVICE_NAME) {
   }
 }
 var db = null,
-    dbDetails = new Object();
+    dbDetails = new Object(),
+    mdb = null;
+
+    mongoose.connect( mongoURL );
+    mdb = mongoose.connection;
+    mdb.on('error', console.error.bind(console, 'connection error:'));
+    mdb.once('open', function() {
+     // we're connected!
+      console.log('Connected to mongoose at: %s', mongoURL);
+    });
+app.use(session({
+  secret: 'work hard on MTurk',
+  resave: true,
+  saveUninitialized: false,
+  store: new MongoStore({
+    mongooseConnection: mdb
+  })
+}));
+
+// parse incoming requests
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 
 var initDb = function(callback) {
   if (mongoURL == null) return;
@@ -52,7 +78,7 @@ var initDb = function(callback) {
     dbDetails.url = mongoURLLabel;
     dbDetails.type = 'MongoDB';
 
-    console.log('Connected to MongoDB at: %s', mongoURL);
+    console.log('Connected to MongoDB at:  %s', mongoURL);
   });
 };
 
@@ -77,12 +103,9 @@ app.get('/', function (req, res) {
   }
 });
 
-app.get('/abc', function (req, res) {
-  // try to initialize the db on every request if it's not already
-  // initialized.
- 
-    res.send('abc Ok!');
-})
+var admin= require('./admin')
+app.use('/admin', admin )
+
 
 app.get('/pagecount', function (req, res) {
   // try to initialize the db on every request if it's not already
