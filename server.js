@@ -122,6 +122,24 @@ app.get('/pagecount', function (req, res) {
   }
 });
 
+app.get( '/genericPages/*', function( req, res ){
+  var relurl= req.url.slice(14);
+  sch.HTML_Pages.findOne( {relurl:relurl}, function( err, data ){
+	if(err){
+      console.error(err.stack);
+      res.status(500).send('Something bad happened!');	  
+      return;
+	}  
+	if( data == null ){
+      res.status(404).send('Page not found.');	  
+      return;		
+	}
+	//console.log(data);
+	res.send( data.content );
+  })
+  //res.send( relurl )
+} );
+
 // error handling
 app.use(function(err, req, res, next){
   console.error(err.stack);

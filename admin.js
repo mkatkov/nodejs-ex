@@ -3,12 +3,13 @@ var router = express.Router();
 var mongoose = require('mongoose');
 var sch= require('./schema')
 var crypto = require('crypto');
-//var mturk = require('mturk-api');
 const uuidv4 = require('uuid/v4');
 var ejs = require('ejs');
 var blake = require('blakejs')
 var AWS = require('aws-sdk');
 var region = 'us-east-1';
+var fs = require('fs');
+const path = require('path');
 
 var endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 
@@ -150,7 +151,6 @@ router.post( "/action/mturk",  function (req, res, next ) {
        if (err) {
         return next(err);
       }
-             
               res.send( data.AvailableBalance )
             });  
           break;
@@ -197,9 +197,104 @@ router.post( "/action/setAPIKey",  function (req, res, next ) {
     sandbox : true
 }  )
 
-  //console.log( decrypt( encryptedSecret, req.body.pass, iv ) );
+ //console.log( decrypt( encryptedSecret, req.body.pass, iv ) );
  // console.log( req.body );
   res.send('');
+})
+
+var listOfStoredPagesTemplate;
+fs.readFile( path.join( __dirname, 'views/admin/ListOfStoredPages.partial.html' ), function(err, data){
+  if(err){
+	  console.log(err);
+  }
+ // console.log(data.toString())
+  listOfStoredPagesTemplate= ejs.compile(data.toString());
+} )
+
+function sendListOfStoredPages( req, res, next ){
+  var query=sch.HTML_Pages.find( );
+  query.select( "relurl" );
+  query.exec( function( err, data ){
+     if (err) {
+        return next(err);
+     }
+     //console.log(data);
+     res.send( listOfStoredPagesTemplate({host:req.headers.host, data:data}) )
+  } )	
+}
+
+router.post( '/partial/ListOfStoredPages', function (req, res, next ) { 
+  if( req.session.user != 'admin' ){
+   var err = new Error('Not authorized! Go back!');
+          err.status = 400;
+          return next(err);
+  }
+  sendListOfStoredPages( req, res, next );
+})
+
+router.post( '/action/createNewHTMLPage', function (req, res, next ) { 
+  if( req.session.user != 'admin' ){
+   var err = new Error('Not authorized! Go back!');
+          err.status = 400;
+          return next(err);
+  }
+  //console.log( req.body );
+  if( ('relurl' in req.body) & ( 'content' in req.body) ){
+    sch.HTML_Pages.create( {relurl: req.body.relurl, content:req.body.content},
+      function( err, data ){
+		  if(err){
+			  console.log(err);
+		  }
+         sendListOfStoredPages( req, res, next );
+     });
+  } else {
+   var err = new Error('no data to save');
+          err.status = 400;
+          return next(err);	  
+  }
+})
+
+
+router.post( '/action/storeHTMLPage', function (req, res, next ) { 
+  if( req.session.user != 'admin' ){
+   var err = new Error('Not authorized! Go back!');
+          err.status = 400;
+          return next(err);
+  }
+  if( ('relurl' in req.body) & ( 'content' in req.body) ){
+    sch.HTML_Pages.update( {relurl: req.body.relurl}, {content:req.body.content},
+      function( err, data ){
+		  if(err){
+			  console.log(err);
+		  }
+		  res.send('Ok')         
+     });
+  } else {
+   var err = new Error('no data to save');
+          err.status = 400;
+          return next(err);	  
+  }
+})
+
+router.post( '/action/removeHTMLPage', function (req, res, next ) { 
+  if( req.session.user != 'admin' ){
+   var err = new Error('Not authorized! Go back!');
+          err.status = 400;
+          return next(err);
+  }
+  if( ('relurl' in req.body) ){
+    sch.HTML_Pages.remove( {relurl: req.body.relurl},
+      function( err ){
+		  if(err){
+			  console.log(err);
+		  }
+         sendListOfStoredPages( req, res, next );
+     });
+  } else {
+   var err = new Error('no data to save');
+          err.status = 400;
+          return next(err);	  
+  }
 })
 
 router.post( '/partial/MturkConnectionFormContent', function (req, res, next ) { 

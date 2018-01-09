@@ -1,0 +1,5 @@
+<ul>
+  <% {var k; for(k=0;k< data.length; k++ ){ %>
+	<li onclick="fgp.loadPage('<%= data[k].relurl %>')"> <%= data[k].relurl %> </li>  
+  <% }} %>
+</ul>
