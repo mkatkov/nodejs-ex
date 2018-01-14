@@ -142,26 +142,91 @@ router.post( "/action/mturk",  function (req, res, next ) {
     mturkLogin( req, res, next, function ( req, res, next ){
       var aval= req.session.adminVals;
       //console.log( aval )
-      if( 'body' in req ){
         switch(req.body.action){
         case "getBalance" :
-            aval.mturk.getAccountBalance(function(err, data){
+          aval.mturk.getAccountBalance(function(err, data){
              // console.log(data.AvailableBalance);
               //console.log(data);
-       if (err) {
-        return next(err);
-      }
-              res.send( data.AvailableBalance )
-            });  
-          break;
-        }
-      } else {
-        var err = new Error('???');
-        err.status = 400;
-        return next(err);    
-      }
-    } )
-  }
+            if (err) {
+              return next(err);
+            }
+            res.send( data.AvailableBalance )
+          });  // account balance
+        break;
+        case "createNewHIT":
+          var data= req.body;
+          var qURL = "";
+          console.log(data);
+          if( data.isInternal == 'on' ){
+			  data.isInternal= true;
+			  qURL= "https://"+req.headers.host+"/genericPages/"+data.url;
+		  } else {
+	        data.isInternal=false;
+	        qURL= data.url;
+	      }
+	      console.log(qURL);
+	      var extQuestion="<ExternalQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd\">\
+  <ExternalURL>"+qURL+"</ExternalURL>\
+  <FrameHeight>800</FrameHeight>\
+</ExternalQuestion>";
+
+          var testHIT = {
+            Title: data.title,
+            Description: data.Description,
+            MaxAssignments: data.MaxAssignement,
+            LifetimeInSeconds: data.Lifetime,
+            AssignmentDurationInSeconds: data.duration,
+            Reward: data.reward,
+            Question: extQuestion,
+
+            // should be done from webpage. for information see following link
+            // https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QualificationRequirementDataStructureArticle.html#ApiReference_QualificationType-IDs
+            // Add a qualification requirement that the Worker must be either in Canada or the US 
+            QualificationRequirements: [
+              {
+                QualificationTypeId: '00000000000000000071',
+                Comparator: 'In',
+                LocaleValues: [
+                    { Country: 'US' },
+                    { Country: 'CA' },
+                    { Country: 'IL' },
+                ],
+              },
+            ],
+          };
+
+
+          console.log(extQuestion);
+          aval.mturk.createHIT(testHIT, function (err, hitData) {
+            if (err) {
+               console.log(err.message);
+            } else {
+               console.log(hitData)
+               sch.MturkHIT.create(  {
+                 title: data.title,
+			     description: data.Description,
+			     maxAssigments: data.MaxAssignement,
+			     lifetime: data.Lifetime ,
+			     duration: data.duration,
+			     reward: data.reward,
+			     url:  data.url,
+			     isURLInternal: data.isInternal,
+			     HITid : hitData.HITid,
+			     HITdata: hitData
+		       },
+               function( err, data ){
+		         if(err){
+			       console.log(err);
+		         }
+		         res.send( hitData )
+                 //sendListOfStoredPages( req, res, next );
+               });
+		   }
+	     });
+	    break;
+	    }
+    } ); // mturkLogin
+  } // if
 })
 
 router.post( "/action/resetAPIKey",  function (req, res, next ) { 
@@ -231,6 +296,17 @@ router.post( '/partial/ListOfStoredPages', function (req, res, next ) {
   }
   sendListOfStoredPages( req, res, next );
 })
+
+router.post( '/action/createNewHIT', function (req, res, next ) { 
+  if( req.session.user != 'admin' ){
+   var err = new Error('Not authorized! Go back!');
+          err.status = 400;
+          return next(err);
+  }
+  console.log( req.body );
+  res.send('<script>alert(1);</script>')
+})
+
 
 router.post( '/action/createNewHTMLPage', function (req, res, next ) { 
   if( req.session.user != 'admin' ){

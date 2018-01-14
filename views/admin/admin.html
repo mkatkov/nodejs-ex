@@ -208,19 +208,19 @@ FillGenericPagesClass.prototype.loadPage = function( relurl ){
 }
 var fgp= new FillGenericPagesClass();
 
-function toogleCell(cellid){
+function toogleCell(cellid, processor ){
   var cell= document.getElementById( cellid );
-  var content= document.getElementById( cellid+"Content" );
+  var cont= document.getElementById( cellid+"Content" );
 
   if( cell.innerHTML[0]=="+" ){
-    console.log( "expand" )
-    content.style.display= "table";
-    cell.innerHTML= "Generic pages";
-    fgp.renderList();
+    //console.log( "expand "+ processor )
+    cont.style.display= "table";
+    cell.innerHTML= cell.innerHTML.slice(1);
+    processor.renderList();
   } else {
-    console.log( "hide" )
-    content.style.display= "none";
-    cell.innerHTML= "+ Generic pages";
+    //console.log( "hide" )
+    cont.style.display= "none";
+    cell.innerHTML= "+ "+cell.innerHTML;
 }
 }
 
@@ -236,7 +236,7 @@ function createNewHTMLPage( ){
 }
 
 function storeCurrentHTMLPage(){
-  var content= document.getElementById( 'genericHTMLPageCellContent' );
+  var cont= document.getElementById( 'genericHTMLPageCellContent' );
   var relurl=  document.getElementById( 'htmlPageRelUrl' ).value;
   var text=  document.getElementById( 'GenericPageContent' ).value;
   console.log( relurl );
@@ -246,7 +246,7 @@ function storeCurrentHTMLPage(){
 }
 
 function removeCurrentHTMLPage(){
-  var content= document.getElementById( 'genericHTMLPageCellContent' );
+  var cont= document.getElementById( 'genericHTMLPageCellContent' );
   var relurl=  document.getElementById( 'htmlPageRelUrl' ).value;
   var text=  document.getElementById( 'GenericPageContent' ).value;
   console.log( relurl );
@@ -255,6 +255,31 @@ function removeCurrentHTMLPage(){
     document.getElementById("ListOfStoredPages") );
     document.getElementById( 'GenericPageContent' ).value= "";
     document.getElementById( 'htmlPageRelUrl' ).value="";
+}
+
+function HitProcessor(){}
+var hitPr= new HitProcessor();
+
+HitProcessor.prototype.renderList= function(){
+  console.log('hitProcessor renderList');
+}
+
+function createNewHIT() {
+  var data={
+    title: document.getElementById( 'HIT_Title' ).value,
+    Description: document.getElementById( 'HIT_Description' ).value,
+    MaxAssignement: document.getElementById( 'HIT_MaxAssigmenents' ).value,
+    Lifetime: document.getElementById( 'HIT_Lifetime' ).value,
+    duration: document.getElementById( 'HIT_Duration' ).value,
+    reward: document.getElementById( 'HIT_Reward' ).value,
+    url: document.getElementById( 'HIT_URL' ).value,
+    isInternal: document.getElementById( 'HIT_isURLInternal' ).value,
+    
+    action:"createNewHIT"
+    };
+
+  getFillHTML( 'admin/action/mturk', data,  
+     document.getElementById("ListOfHits") )    
 }
 
 </script>
@@ -322,7 +347,7 @@ Mturk generic html page
 %>
 
 <div class="doubleborder" >
- <div class="sandbox center" id="genericHTMLPageCell" onclick="toogleCell('genericHTMLPageCell');">+ Generic pages </div>
+ <div class="sandbox center" id="genericHTMLPageCell" onclick="toogleCell('genericHTMLPageCell', fgp);">+ Generic pages </div>
  <div id="genericHTMLPageCellContent" style="display:none" >  
    <div style="display:table-row">
    <div name="list_of_content" style="display:table-cell;width:30%;" id="ListOfStoredPages">
@@ -340,7 +365,42 @@ Mturk generic html page
   </div>
  </div>
 </div>
+<%# 
+/***************************************************************
 
+Mturk hits
 
+***************************************************************/
+%>
+
+<div class="doubleborder" >
+  <div class="sandbox center" id="genericHITCell" onclick="toogleCell('genericHITCell', hitPr );">+ Hits </div>
+ <div id="genericHITCellContent" style="display:none" >  
+ 
+  <div style="display:table-row">
+   <div name="list_of_content" style="display:table-cell;width:30%;" id="ListOfHits">
+     <!-- put here the list of -->
+       
+   </div>
+   <div name="page_content" style="display:table-cell;width:65%;">     
+     <input type="text" id="HITid"> <button name="new" onclick="createNewHIT()"> new </button>
+     <button name="store" onclick="storeCurrentHTMLPage()"> submit </button>
+     <!-- <button name="store" onclick="removeCurrentHTMLPage()"> remove </button> -->
+     <div id="HITform"></div>
+     Title: <input type="text" id="HIT_Title"><br>
+     Description: <input type="text" id="HIT_Description"><br>
+     MaxAssignments: <input type="text" id="HIT_MaxAssigmenents"><br>
+     LifetimeInSeconds: <input type="text" id="HIT_Lifetime"><br>
+     AssignmentDurationInSeconds: <input type="text" id="HIT_Duration"><br>
+     Reward: <input type="text" id="HIT_Reward"><br>
+     Question URL: <input type="text" id="HIT_URL"><br>
+     is URL internal? <input type="checkbox" id="HIT_isURLInternal">     
+   </div>
+    
+  </div>
+
+ 
+ </div>   
+</div>
 </body>
 </html>
