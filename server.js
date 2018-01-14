@@ -123,7 +123,13 @@ app.get('/pagecount', function (req, res) {
 });
 
 app.get( '/genericPages/*', function( req, res ){
-  var relurl= req.url.slice(14);
+  var qMark= req.url.indexOf("?");
+  var relurl;
+  if( qMark==-1){
+    relurl = req.url.slice(14);
+  } else {
+	relurl= req.url.slice(14, qMark);
+  }
   sch.HTML_Pages.findOne( {relurl:relurl}, function( err, data ){
 	if(err){
       console.error(err.stack);
