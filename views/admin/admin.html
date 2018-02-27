@@ -49,6 +49,12 @@ ul {
   color: white
 }
 
+.hit_Reviewable {
+  background-color: #ddddee;
+  color: blue
+}
+
+
 .production {
   background-color: #006edd;
   color: white
@@ -262,6 +268,14 @@ var hitPr= new HitProcessor();
 
 HitProcessor.prototype.renderList= function(){
   console.log('hitProcessor renderList');
+  getFillHTML( 'admin/partial/ListOfHITs', {}, 
+      document.getElementById("ListOfHITs") );
+}
+
+HitProcessor.prototype.loadInfo= function( hitId ){
+  console.log('hitProcessor loadInfo for '+ hitId);
+  /*getFillHTML( 'admin/partial/ListOfHITs', {}, 
+      document.getElementById("ListOfHITs") );*/
 }
 
 function createNewHIT() {
@@ -378,7 +392,7 @@ Mturk hits
  <div id="genericHITCellContent" style="display:none" >  
  
   <div style="display:table-row">
-   <div name="list_of_content" style="display:table-cell;width:30%;" id="ListOfHits">
+   <div name="list_of_content" style="display:table-cell;width:30%;" id="ListOfHITs">
      <!-- put here the list of -->
        
    </div>
@@ -396,10 +410,7 @@ Mturk hits
      Question URL: <input type="text" id="HIT_URL"><br>
      is URL internal? <input type="checkbox" id="HIT_isURLInternal">     
    </div>
-    
   </div>
-
- 
  </div>   
 </div>
 </body>

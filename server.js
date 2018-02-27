@@ -7,7 +7,7 @@ var mongoose = require('mongoose');
 var MongoStore = require('connect-mongo')(session);
 var sch= require('./schema')
 var bodyParser = require('body-parser');
-Object.assign=require('object-assign')
+Object.assign=require('object-assign');
 
 app.engine('html', require('ejs').renderFile);
 app.use(morgan('combined'))
@@ -37,11 +37,21 @@ if (mongoURL == null && process.env.DATABASE_SERVICE_NAME) {
 
   }
 }
+
+const MongoOptions = {
+  useMongoClient: true,
+  autoIndex: false, // Don't build indexes
+  reconnectTries: Number.MAX_VALUE, // Never stop trying to reconnect
+  reconnectInterval: 500, // Reconnect every 500ms
+  poolSize: 10, // Maintain up to 10 socket connections
+  // If not connected, return errors immediately rather than waiting for reconnect
+  bufferMaxEntries: 0
+};
 var db = null,
     dbDetails = new Object(),
     mdb = null;
 
-    mongoose.connect( mongoURL );
+    mongoose.connect( mongoURL, MongoOptions );
     mdb = mongoose.connection;
     mdb.on('error', console.error.bind(console, 'connection error:'));
     mdb.once('open', function() {
@@ -105,7 +115,8 @@ app.get('/', function (req, res) {
 
 var admin= require('./admin')
 app.use('/admin', admin )
-
+var freeRecall= require('./freeRecall');
+app.use( '/freeRecall', freeRecall.router )
 
 app.get('/pagecount', function (req, res) {
   // try to initialize the db on every request if it's not already

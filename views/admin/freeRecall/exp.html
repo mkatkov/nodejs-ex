@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<% var titleStr= 'Free recall ';
+  if(prm['preview']) { titleStr+='preview ';} 
+  if(prm['qualification']) { titleStr+= 'qualification ';}   
+%>
+  <title> <%= titleStr %></title>
+
+
+<% 
+/***************************************************************
+
+Style
+
+***************************************************************/
+%>
+
+
+<style>
+body {
+  color: #404040;
+  font-family: "Helvetica Neue",Helvetica,"Liberation Sans",Arial,sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+html {
+  font-family: sans-serif;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+ul {
+    margin-top: 0;
+}
+
+.doubleborder {
+  border-style: double;
+}
+
+.halfwidth {
+  width: 45%;
+}
+.expFrame {
+  border-style: double;
+  height: 400px	
+}
+.wordPresentation {
+text-align: center;
+font-size: 100px;
+font-weight: bold;
+transform: translateY(40%);
+height: 300px;
+}
+.center {
+  text-align: center
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.hidden {
+	display:none
+}
+
+.right_corner{
+  float:right;  
+}
+
+</style>
+ 
+
+
+<% 
+/***************************************************************
+
+scripts
+
+***************************************************************/
+%>
+
+<% 
+console.log(prm);
+var style="", introAction="";
+if( ! prm['preview'] ){ 
+	style= 'style="display:none"';
+	introAction= 'onclick="runExperiment()"';
+	%>
+
+<script type="text/javascript">
+
+function local_data(){
+  var result = {},
+    tmp = [];
+  var items = location.search.substr(1).split("&");
+  for (var index = 0; index < items.length; index++) {
+        tmp = items[index].split("=");
+        result[tmp[0]] = decodeURIComponent( tmp[1] );
+  }
+  this.prm=result;
+  this.trialNum= <%= prm['trialNum'] %>;
+  this.numWords= <%= prm['numWords'].slice(1) %>;
+  this.wordTime= <%= prm['wordTime'] %>;
+  this.responseTime= <%= prm['responseTime'] %>;
+}
+
+var local= new local_data();
+
+function serverResponse( addr, data, func ){
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", addr, true);
+
+  //Send the proper header information along with the request
+  //xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  xhr.setRequestHeader("Content-type", "application/json");
+
+  xhr.onreadystatechange = function() {//Call a function when the state changes.
+    if(xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) {
+        // Request finished. Do processing here.
+        func( xhr );
+    }
+  }
+  xhr.send( JSON.stringify( data ) ); 
+}
+
+function getFillHTML( addr, data, el ){
+  serverResponse( addr, data, function (xhr){
+    el.innerHTML = xhr.responseText;
+} );
+}
+
+function recordResposnes(){
+  var el= document.getElementById( "wordPresentationFrame");
+  el.innerHTML='<input type="text" id="responseBox" >';
+  var input = document.getElementById("responseBox");
+  input.focus();
+  local.startRecall= new Date()
+  var words=[ ];
+  input.addEventListener("keyup", function(event) {
+  // Cancel the default action, if needed
+  event.preventDefault();
+  // Number 13 is the "Enter" key on the keyboard
+    if (event.keyCode === 13) {
+      // Trigger the button element with a click
+      words.push( [ input.value, new Date()] );
+      input.value= '';
+    }
+  });
+  
+  window.setTimeout( function(){
+    serverResponse( '/freeRecall/results', 
+      {   words:words, 
+		  local: local }, function( xhr ) {
+	  el.innerHTML= xhr.responseText;
+    // submit to amazon here
+    document.getElementById( "response_words").value= JSON.stringify(local.presentedWords)
+    document.getElementById( "response_response").value= JSON.stringify(words)
+    document.getElementById( "response_trialNum").value= JSON.stringify(local)
+    document.getElementById( "response_assignmentId").value= local.assignmentId   
+    document.getElementById( "response_form").submit();
+    });
+  }, local.responseTime )
+}
+
+function runExperiment(){
+  var iel= document.getElementById( "introduction");
+  iel.style.display='none';
+  document.getElementById( "experiment").style.display='block';
+  var el= document.getElementById( "wordPresentationFrame");
+  serverResponse( '/freeRecall/random_trial_data<%- prm['numWords']%>', {}, function( xhr )
+  {
+	console.log("resp: ", xhr.responseText);
+	var words= JSON.parse(xhr.responseText);
+	local.presentedWords= words;
+	console.log("got response")
+	console.log(words);
+	var wi=0;
+	var timer;
+	timer = setInterval( function(){
+      if( wi == words.length ){
+		window.clearInterval( timer );
+		el.innerHTML="";
+		window.setTimeout( recordResposnes, 5000 )
+	  } else {
+        el.innerHTML=words[wi]
+        wi+=1;		  
+	  }
+	}, local.wordTime )
+  })
+  
+  // show response box 
+}
+
+function initExp(){
+ document.getElementById( "JSmessage").style.display='none';  
+ document.getElementById( "introduction").style.display='block';  
+ 
+ if( 'assignmentId' in local.prm ){
+	console.log( 'assignmentId in prm' )
+    local.assignmentId= local.prm['assignmentId'];
+	if( local.prm['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' ){
+	  console.log( 'preview' )
+	  local.mode= 'preview';	  
+	} else {
+	  console.log( 'real assigmenent' )
+	  local.mode= 'real';
+	}
+ } else {
+   local. mode= 'preview';
+   local.assignmentId= '';
+ } 
+}
+</script>
+<% } %> 
+<% if (prm['qualification']) {%>
+<script type="text/javascript">
+	var introPage= 0;
+	function nextIntroPage(){
+		introPage++;
+		showIntroPage()
+	}
+	function showIntroPage(){
+		switch( introPage ){
+			case 1:
+			  document.getElementById("introduction").innerHTML=
+			  " <h1>Welcome to Free Recall experiment!</h1>"+
+			  "<p>We limit the number of tasks you can perform during a single day."+
+			  " Each task can have different duration, since we vary the number of words presented in tasks."+
+			  " Nevertheless, the total time to perform tasks is programmatically limited to a little less than 1 hour to keep your brain relatively fresh."+
+			  " We give a small payout ($0.07) for each task, but you recieve a bonus completing all the tasks totaling the day reward to $3.40 </p>" <% if(prm['preview']) { %> ; <% }else{ %> +
+			  ' <button name="Start" onclick= "runExperiment()" > Start </button>'
+				  <% } %>
+			break;
+		}
+	}
+</script>
+<% } %> 
+
+</head>
+<body>
+<div class="expFrame" id="introduction" <%- style %>>
+<% if (prm['qualification']) {%>
+<button class="right_corner" onclick="nextIntroPage()">next page</button>
+<% } %>
+<h1>Welcome to Free Recall experiment!</h1>
+
+<% if (prm['qualification']) {%>
+<p class="bold">
+  This is a qualification task. 
+  If you pass a qualification you will be granted a qualification to perform a real task. 
+</p>  
+<% } %>
+<div >
+<p>
+You will be presented with the words. One word every 3 seconds. 
+We would like to ask you to memorize presented words. 
+When all words will be presented an empty screen appears. 
+In 5 seconds you will get the form where you would 
+type all words that you remember. 
+One by one, hitting "Enter" button when you finish typing a single word.
+</p><p>
+This is a scientific experiment, and we relay on your cooperation. 
+Please do not record presented words, use your memory, otherwise we would not undestand how brain works.
+The completion of the task does not depend on the number of words you will type in. Try to do your best, 
+but this is known to be a challenging task.
+</p>
+
+<% if (prm['qualification']) {%>
+<p class="bold">
+  Please do not run this task if you've been trained on memorizing techniques.
+  In the qualification task we are testing your typing speed.
+  Only 4 words will be presented, and we are measuring the time it takes you to type any 2 of them correctly.
+  You will be given 60 seconds for typing.
+</p>  
+<p class="bold">
+ At the completion of the task you will be automatically given the qualification.
+ If your speed is not much slower than an average typing speed for Native English speaking persons you will 
+ get access for the real experiment. 
+</p>  
+<% } else { %>
+<button name="Start" onclick= "runExperiment()" > Start </button>
+<% } %>
+</div>
+</div>
+
+<% if( ! prm['preview'] ){ %>
+
+
+<div  class="expFrame" id="experiment"  style="display:none" >
+
+  <div class="wordPresentation" id= "wordPresentationFrame">
+     
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+<div   class="expFrame" id="end_of_experiment"  style="display:none">
+
+Thank you
+
+</div>
+
+<div id="JSmessage">
+Javascript should be turned on.
+</div>
+
+<form id= "response_form" class="hidden" action="https://workersandbox.mturk.com/mturk/externalSubmit" method="POST">
+  <input type="text" name="assignmentId", value="1" id="response_assignmentId">
+  <input type="text" name="words", value="1" id="response_words">
+  <input type="text" name="response", value="1" id="response_response" >
+  <input type="text" name="trialNum", value="1" id="response_trialNum" >
+</form>
+
+<script>
+ initExp();
+</script>
+<% } %> 
+</body>
+</html>

@@ -10,6 +10,8 @@ var AWS = require('aws-sdk');
 var region = 'us-east-1';
 var fs = require('fs');
 const path = require('path');
+var HITProc= require( './HITprocessor' );
+var freeRecall= require('./freeRecall');
 
 var endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 
@@ -26,6 +28,7 @@ var sha512 = function(password, salt){
     return value;
 };
 
+
 function encrypt(text, password, iv) {
   var iv1= blake.blake2b( Uint8Array.from(iv), null, 12 );
   var key= blake.blake2b( Uint8Array.from(password) , null, 32 );
@@ -39,7 +42,6 @@ function encrypt(text, password, iv) {
     tag: tag
   };
 }
-
 function decrypt(encrypted, password, iv) {
   var iv1= blake.blake2b( Uint8Array.from(iv), null, 12 );
   var key= blake.blake2b( Uint8Array.from(password) , null, 32 );
@@ -49,7 +51,6 @@ function decrypt(encrypted, password, iv) {
   dec += decipher.final('utf8');
   return dec;
 }
-
 function adminProcessing( req, res, next, method ){
   if( req.session.user != 'admin' ){
    var err = new Error('Not authorized! Go back!');
@@ -69,6 +70,7 @@ function adminProcessing( req, res, next, method ){
       req.session.adminVals= new Object();
       req.session.adminVals.showForm= true;
       var adminVals= req.session.adminVals;
+      adminVals.HITproc= new HITProc();
    }
    
    // connection to mturk
@@ -84,7 +86,6 @@ function adminProcessing( req, res, next, method ){
       res.render('admin/admin.html', req.session.adminVals );
    })
 }
-
 function mturkLogin( req, res, next, func ){
   var aval= req.session.adminVals;
   if( 'AWSConfig' in aval ){
@@ -118,6 +119,8 @@ function mturkLogin( req, res, next, func ){
            };
       //console.log( AWS.config )
       aval.AWSConfig= AWS.config;
+      sch.GlobalData.AWSConfig= AWS.config;
+      sch.GlobalData.AWSendpoint= endpoint;
       aval.mturk=new AWS.MTurk({ endpoint: endpoint });
       if( aval.mturk == null ){
         var err = new Error('???');
@@ -131,6 +134,57 @@ function mturkLogin( req, res, next, func ){
     } )
   }
 }
+
+var listOfHITsTemplate;
+fs.readFile( path.join( __dirname, 'views/admin/ListOfHITs.partial.html' ), function(err, data){
+  if(err){
+	  console.log(err);
+  }
+ // console.log(data.toString())
+  listOfHITsTemplate= ejs.compile(data.toString());
+} );
+
+function mturkUpdateListOfHITs( req, res, next, mturk, func ){
+  var HITproc= new HITProc();
+  console.log( HITproc );
+  HITproc.listMturkHITs( req, next, function( ){
+	console.log( HITproc );
+  } );
+}
+function mturkGetListOfHITs( req, res, next, mturk, func ){
+  var aval= req.session.adminVals;
+  if( ('mturkData' in aval) & 'LisfOfHITs' in aval.mturkData ){
+     func(req, res, next);	 
+  } else {
+	mturkUpdateListOfHITs( req, res, next, mturk, func );
+  }
+}
+function sendListOfHITs( req, res, next, mturk ){
+  var aval= req.session.adminVals;
+  //console.log(aval.storedHITs);
+  res.send( listOfHITsTemplate({
+	host:req.headers.host, 
+	hits:aval.storedHITs, 
+	hitIds: Object.keys(aval.storedHITs) }) );
+}
+
+router.post( "/freeRecall/*",  function (req, res, next ) { 
+  if( req.session.user != 'admin' ){
+   var err = new Error('Not authorized! Go back!');
+          err.status = 400;
+          return next(err);
+  }
+  return freeRecall.admin_post( req, res, next );
+})
+
+router.get( "/freeRecall/*",  function (req, res, next ) { 
+  if( req.session.user != 'admin' ){
+   var err = new Error('Not authorized! Go back!');
+          err.status = 400;
+          return next(err);
+  }
+  return freeRecall.admin_get( req, res, next );
+})
 
 router.post( "/action/mturk",  function (req, res, next ) { 
   if( req.session.user != 'admin' ){
@@ -201,7 +255,7 @@ router.post( "/action/mturk",  function (req, res, next ) {
             if (err) {
                console.log(err.message);
             } else {
-               console.log(hitData)
+               console.log(hitData.HIT)
                sch.MturkHIT.create(  {
                  title: data.title,
 			     description: data.Description,
@@ -211,15 +265,15 @@ router.post( "/action/mturk",  function (req, res, next ) {
 			     reward: data.reward,
 			     url:  data.url,
 			     isURLInternal: data.isInternal,
-			     HITid : hitData.HITid,
-			     HITdata: hitData
+			     HITid : hitData.HIT.HITId,
+			     HITdata: hitData.HIT
 		       },
                function( err, data ){
 		         if(err){
 			       console.log(err);
 		         }
-		         res.send( hitData )
-                 //sendListOfStoredPages( req, res, next );
+		         //res.send( hitData )
+                 sendListOfHITs( req, res, next, aval.mturk );
                });
 		   }
 	     });
@@ -228,7 +282,6 @@ router.post( "/action/mturk",  function (req, res, next ) {
     } ); // mturkLogin
   } // if
 })
-
 router.post( "/action/resetAPIKey",  function (req, res, next ) { 
   if( req.session.user != 'admin' ){
    var err = new Error('Not authorized! Go back!');
@@ -237,7 +290,6 @@ router.post( "/action/resetAPIKey",  function (req, res, next ) {
   }
   res.sendFile( "views/admin/MturkConnectionForm.partial.html", { root : __dirname} );
 })
-
 router.post( "/action/setAPIKey",  function (req, res, next ) { 
   if( req.session.user != 'admin' ){
    var err = new Error('Not authorized! Go back!');
@@ -275,7 +327,6 @@ fs.readFile( path.join( __dirname, 'views/admin/ListOfStoredPages.partial.html' 
  // console.log(data.toString())
   listOfStoredPagesTemplate= ejs.compile(data.toString());
 } )
-
 function sendListOfStoredPages( req, res, next ){
   var query=sch.HTML_Pages.find( );
   query.select( "relurl" );
@@ -287,7 +338,6 @@ function sendListOfStoredPages( req, res, next ){
      res.send( listOfStoredPagesTemplate({host:req.headers.host, data:data}) )
   } )	
 }
-
 router.post( '/partial/ListOfStoredPages', function (req, res, next ) { 
   if( req.session.user != 'admin' ){
    var err = new Error('Not authorized! Go back!');
@@ -296,18 +346,27 @@ router.post( '/partial/ListOfStoredPages', function (req, res, next ) {
   }
   sendListOfStoredPages( req, res, next );
 })
-
-router.post( '/action/createNewHIT', function (req, res, next ) { 
+router.post( '/partial/ListOfHITs', function (req, res, next ) { 
   if( req.session.user != 'admin' ){
    var err = new Error('Not authorized! Go back!');
           err.status = 400;
           return next(err);
   }
-  console.log( req.body );
-  res.send('<script>alert(1);</script>')
+  
+  var aval= req.session.adminVals;
+  if( 'storedHITs' in aval ){
+    sendListOfHITs( req, res, next );
+  } else {
+    var hp= new HITProc();
+	hp.getStoredHITs( function( err ){
+	  if(err){
+		 return next(err);
+	  }
+	  aval.storedHITs= hp.storedHITs;
+      sendListOfHITs( req, res, next );
+	} )
+  }
 })
-
-
 router.post( '/action/createNewHTMLPage', function (req, res, next ) { 
   if( req.session.user != 'admin' ){
    var err = new Error('Not authorized! Go back!');
@@ -329,8 +388,6 @@ router.post( '/action/createNewHTMLPage', function (req, res, next ) {
           return next(err);	  
   }
 })
-
-
 router.post( '/action/storeHTMLPage', function (req, res, next ) { 
   if( req.session.user != 'admin' ){
    var err = new Error('Not authorized! Go back!');
@@ -351,7 +408,6 @@ router.post( '/action/storeHTMLPage', function (req, res, next ) {
           return next(err);	  
   }
 })
-
 router.post( '/action/removeHTMLPage', function (req, res, next ) { 
   if( req.session.user != 'admin' ){
    var err = new Error('Not authorized! Go back!');
@@ -372,7 +428,6 @@ router.post( '/action/removeHTMLPage', function (req, res, next ) {
           return next(err);	  
   }
 })
-
 router.post( '/partial/MturkConnectionFormContent', function (req, res, next ) { 
   if( req.session.user != 'admin' ){
    var err = new Error('Not authorized! Go back!');
@@ -392,12 +447,10 @@ router.post( '/partial/MturkConnectionFormContent', function (req, res, next ) {
    })
 
 })
-
 router.post( '/xmltest', function (req, res, next ) { 
  // console.log( req.body );
   res.send( req.body );
 } )
-
 router.get('/', function (req, res, next ) {
   var db= mongoose.connection;
   sch.AdminPass.find( function( err, pass ){
@@ -420,7 +473,6 @@ router.get('/', function (req, res, next ) {
      }     
     })
 })
-
 router.post('/', function (req, res, next ) {
   var db= mongoose.connection;
   sch.AdminPass.find( function( err, pass ){
@@ -447,8 +499,6 @@ router.post('/', function (req, res, next ) {
      }     
     })
 })
-
-// GET for logout logout
 router.get('/logout', function (req, res, next) {
   if (req.session) {
     // delete session object

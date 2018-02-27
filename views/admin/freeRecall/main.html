@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>free recall</title>
+
+
+<% 
+/***************************************************************
+
+Style
+
+***************************************************************/
+%>
+
+
+<style>
+body {
+  color: #404040;
+  font-family: "Helvetica Neue",Helvetica,"Liberation Sans",Arial,sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+html {
+  font-family: sans-serif;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+ul {
+    margin-top: 0;
+}
+
+.doubleborder {
+  border-style: double;
+}
+
+.halfwidth {
+  width: 45%;
+}
+
+.center {
+  text-align: center
+}
+
+.sandbox {
+  background-color: #dd6e00;
+  color: white
+}
+
+.hit_Reviewable {
+  background-color: #ddddee;
+  color: blue
+}
+
+
+.production {
+  background-color: #006edd;
+  color: white
+}
+
+/* Style the tab */
+.tab {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+}
+
+/* Style the buttons inside the tab */
+.tab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    font-size: 17px;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+    background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+    background-color: #ccc;
+}
+
+</style>
+ 
+
+
+<% 
+/***************************************************************
+
+scripts
+
+***************************************************************/
+%>
+
+<script type="text/javascript">
+function serverResponse( addr, data, func ){
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", addr, true);
+
+  //Send the proper header information along with the request
+  //xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  xhr.setRequestHeader("Content-type", "application/json");
+
+  xhr.onreadystatechange = function() {//Call a function when the state changes.
+    if(xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) {
+        // Request finished. Do processing here.
+        func( xhr );
+    }
+  }
+  xhr.send( JSON.stringify( data ) ); 
+}
+
+function getFillHTML( addr, data, el ){
+  serverResponse( addr, data, function (xhr){
+    el.innerHTML = xhr.responseText;
+} )
+}
+
+function submitWords(){
+  var el= document.getElementById( "wordList" );
+  serverResponse( '/admin/freeRecall/saveWords', {words:el.value}, function( xhr )
+  {
+	  alert(xhr.responseText);
+  })
+}
+
+</script>
+
+
+</head>
+<body>
+<h1>Welcome to Free Recall!</h1>
+
+<div style="display:table">
+
+<div style="display:table-cell" class="doubleborder halfwidth" >
+ <div class="center">words:</div> 
+   <textarea rows="4" cols="50" id="wordList">
+word1
+word2
+</textarea>
+ <button class="OperationTabButton" onclick="submitWords()">submit words</button>
+ </div>
+
+</div>
+</body>
+</html>
