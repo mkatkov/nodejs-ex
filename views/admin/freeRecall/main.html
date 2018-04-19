@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>free recall</title>
+  <title>free recall admin</title>
 
 
 <% 
@@ -38,6 +38,10 @@ ul {
 
 .halfwidth {
   width: 45%;
+}
+
+.fullwidth {
+  width: 100%;
 }
 
 .center {
@@ -89,6 +93,10 @@ ul {
     background-color: #ccc;
 }
 
+.ident1 {
+	margin-left: 1cm;
+}
+
 </style>
  
 
@@ -133,16 +141,117 @@ function submitWords(){
   })
 }
 
+function reviewHIT( HITid ){
+    var frm= document.getElementById("mainDataWin");
+	getFillHTML( '/admin/freeRecall/partial/HITreview', {HITid:HITid}, frm );
+}
+
+function changeOperationMode(evt, mode) {
+    var i, tabcontent, tablinks;
+   /* tabcontent = document.getElementsById("OperationTabButton");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }*/
+    tablinks = document.getElementsByClassName("OperationTabButton");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    evt.currentTarget.className += " active";
+    var frm= document.getElementById("mainDataWin");
+    var data= {};
+    switch( mode ){
+	  case 'mode': // change operation mode - sandbox/real mode
+	  
+	  break;
+	  case 'updateFromMturk':
+	    getFillHTML( '/admin/freeRecall/partial/updateFromMturk', data, frm );
+	  break;
+	  case 'workers': // get list of workers
+	    getFillHTML( '/admin/freeRecall/partial/workers', data, frm );
+	  break;
+	  case 'HITs': // get workers HITs
+	    getFillHTML( '/admin/freeRecall/partial/HITs', data, frm );
+	  break
+	  case 'submitHIT': // get workers HITs
+	    getFillHTML( '/admin/freeRecall/partial/submitHIT', data, frm );
+	  break
+	}
+	/*
+    if( mode=='production'){
+      frm= document.getElementsByClassName("sandbox");
+      for( k= frm.length-1; k>=0; k-- ){
+        frm[k].classList.add( mode );
+        frm[k].classList.remove( "sandbox" );
+      }
+    } else{
+      frm= document.getElementsByClassName("production");
+      for( k= frm.length-1; k>=0; k-- ){
+        frm[k].classList.add( mode );
+        frm[k].classList.remove( "production" );
+      }
+    }
+
+    frm= document.getElementById("MturkConnectionFormContent");
+    data= { "mode": mode };
+    getFillHTML( 'admin/partial/MturkConnectionFormContent', data, frm );
+    */
+}
+
+function WorkerProcessor(){
+}
+var workers= new WorkerProcessor(); 
+
+function submitHIT( event, mode ){
+  var frm= document.getElementById("mainDataWin");
+  var qPane= document.getElementById("qualificationHITpane");
+  var rPane= document.getElementById("recallHIT");
+  switch(mode){
+	case 'qualificationHIT':
+		rPane.style.display='none';
+		qPane.style.display='block';
+	break;
+	case 'recallHIT':
+		qPane.style.display='none';
+		rPane.style.display='block';
+	break;
+  }
+  //getFillHTML( '/admin/freeRecall/partial/approveHIT', {ASSid:ASSid}, frm );
+}
+
+
+function approveHIT( ASSid ){
+    var frm= document.getElementById("mainDataWin");
+  getFillHTML( '/admin/freeRecall/partial/approveHIT', {ASSid:ASSid}, frm );
+}
+
+function rejectHIT( HITid ){
+    var frm= document.getElementById("mainDataWin");
+  getFillHTML( '/admin/freeRecall/partial/rejectHIT', {ASSid:ASSid}, frm );  
+}
+
 </script>
 
 
 </head>
 <body>
-<h1>Welcome to Free Recall!</h1>
+<h1>Welcome to Free Recall admin area!</h1>
+
+<table class="doubleborder fullwidth"><tr><td>
+<%# This is control buttons ribon %>
+  <button class="OperationTabButton" onclick="changeOperationMode(event, 'mode')">SandBox</button>
+  <button class="OperationTabButton" onclick="changeOperationMode(event, 'submitHIT')">Submit HIT</button>
+  <button class="OperationTabButton" onclick="changeOperationMode(event, 'updateFromMturk')">Update from Mturk</button>
+  <button class="OperationTabButton" onclick="changeOperationMode(event, 'workers')">Workers</button>
+  <button class="OperationTabButton" onclick="changeOperationMode(event, 'HITs')">HITs</button>
+  <button class="OperationTabButton" onclick="changeOperationMode(event, 'ReviewableHITs')">reviewable HITs</button>
+  <button class="OperationTabButton" onclick="changeOperationMode(event, 'HIT Review')">HIT Review</button>
+<div class="doubleborder fullwidth" id="mainDataWin">
+</div>
+</td></tr></table>
+
 
 <div style="display:table">
-
-<div style="display:table-cell" class="doubleborder halfwidth" >
+<div style="display:table-cell" class="doubleborder halfwidth" onClick="document.getElementById('wordList').style.display='none';">
  <div class="center">words:</div> 
    <textarea rows="4" cols="50" id="wordList">
 word1

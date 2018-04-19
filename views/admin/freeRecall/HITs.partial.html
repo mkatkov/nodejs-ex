@@ -1,0 +1,26 @@
+<table style="color:blue" border="1">
+	<tr>
+		<th>HIT Id</th>
+		<th>Title</th>
+		<th>Review</th>
+		<th>HIT data</th>
+		<th>fun</th>
+	</tr>
+  <% {var k; for(k=0;k< data.length; k++ ){ %>
+	 <tr>
+	<td onclick="workers.loadInfo('<%= data[k]['HITid'] %>')"> <%= data[k]['HITid'] %> 
+	</td>
+	<td> <%=  data[k]['HITdata'].Title  %> </td>
+	<td> <% if( data[k]['HITdata'].HITStatus == "Reviewable" ) {
+		  console.log( 'Reviwable' )
+		  if(data[k]['HITdata'].HITReviewStatus == "NotReviewed") { 
+			  console.log( 'NotReviewed' )
+			  %> 
+		  <div onclick="reviewHIT('<%= data[k]['HITid']%>')"> Review </div>
+		<% } } %>
+	<td> <% console.log( data[k]['HITdata'] ) %> 
+		<%=  JSON.stringify( data[k]['HITdata'])  %> </td>
+	<td> ClickHere </td>
+	</tr>
+  <% }} %>
+</table>

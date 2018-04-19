@@ -1,0 +1,59 @@
+<table style="color:blue" border="1">
+	<tr>
+		<th>Assignement Id</th>
+		<th>Assignement data</th>
+	</tr>
+	 <tr>
+	<td> <ol> 
+  <% {var k; 
+		  console.log( index );
+		  for(k=0;k< data['NumResults']; k++ ){ %>
+	  <li>
+		<%= data['Assignments'][k]['AssignmentId'] %> 
+		</li>
+		<% } } %>
+		</ol>
+	</td>
+	<td> 
+		<div> <button onclick="approveHIT( '<%= data['Assignments'][index]['AssignmentId'] %>' )"> Approve </button> 
+		  <button onclick="rejectHIT( '<%= data['Assignments'][index]['AssignmentId'] %>' )"> Reject </button> </div>
+		<div> worker Id: <%= data['Assignments'][index]['WorkerId'] %></div> 
+		<div> HIT Id: <%= data['Assignments'][index]['HITId'] %></div> 
+		<div> Assignment Status : <%= data['Assignments'][index]['AssignmentStatus'] %></div> 
+		<div> Accept Time: <%= data['Assignments'][index]['AcceptTime'] %></div> 
+		<div> Submit Time: <%= data['Assignments'][index]['SubmitTime'] %></div> 
+		<hr>
+		<% {var k; 
+			for(k=0; k< answer.length; k++ ) { 
+			  var qi= answer[k]['QuestionIdentifier'][0];
+			  if(  qi == "trialNum" ) {
+			    var prm= JSON.parse(answer[k]['FreeText'][0]), keys=Object.keys(prm), k, key;
+			    
+			    console.log( keys )
+			    for( k=0; k<keys.length; k++ )
+			    {
+					key= keys[k];
+					if( key == "prm"){
+						var key2, keys2=Object.keys( prm[key] ), k2, prms=prm[key];
+						console.log( typeof(keys2) )
+						for( k2= 0; k2< keys2.length; k2++ ){
+							key2= keys2[k2];
+		%>
+		<div class="ident1"> <%= key2 %>: <%= prms[key2] %></div>
+		<%      
+						}
+					}else{
+		%>
+		<div> <%= key %>: <%= prm[key] %></div>
+		<%         }
+		        } 
+		      } else { 
+		%>
+		<div> <%= answer[k]['QuestionIdentifier'][0] %> : 
+		<%= answer[k]['FreeText'][0] %> </div>
+		<%    } } 
+		   } %>
+		<hr>
+		</td>
+	</tr>
+</table>

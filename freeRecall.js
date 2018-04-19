@@ -2,6 +2,77 @@ var express = require('express');
 var router = express.Router();
 var sch= require('./schema');
 var AWS = require('aws-sdk');
+var parseXMLString = require('xml2js').parseString;
+
+
+var testQuestion="<ExternalQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd\">\
+  <ExternalURL>https://exp-mturk.1d35.starter-us-east-1.openshiftapps.com/freeRecall/random_trial/</ExternalURL>\
+  <FrameHeight>400</FrameHeight>\
+</ExternalQuestion>";
+
+var testHIT = {
+        Title: 'Free recall experiment',
+        Description: 'This is free recall experiment. You need to request "Run Today" qualification, which is automatically granted',
+        MaxAssignments: 1,
+        LifetimeInSeconds: 3600,
+        AssignmentDurationInSeconds: 600,
+        Reward: '0.07',
+        Question: testQuestion,
+
+        // Add a qualification requirement that the Worker must be either in Canada or the US 
+        QualificationRequirements: [
+            {
+                QualificationTypeId: '00000000000000000071',
+                Comparator: 'In',
+                LocaleValues: [
+                    { Country: 'US' },
+                    { Country: 'CA' },
+                    { Country: 'IL' },
+                ],
+            },
+            {
+				QualificationTypeId: '3ISNM39IK7QVTOB2KIEB03RTH4E0SZ',
+				Comparator: 'LessThanOrEqualTo',
+				IntegerValues: [10],
+				RequiredToPreview: true
+			},
+			{
+				QualificationTypeId: '3WZ6PU0JYUIA21NG42RS71S738CLKC',
+				Comparator: 'LessThanOrEqualTo',
+				IntegerValues: [16],
+				RequiredToPreview: false
+			}
+        ],
+    };
+var qualificationHIT = {
+        Title: 'Free recall experiment',
+        Description: 'This is free recall experiment. You need to request "Run Today" qualification, which is automatically granted',
+        MaxAssignments: 1,
+        LifetimeInSeconds: 3600,
+        AssignmentDurationInSeconds: 600,
+        Reward: '0.07',
+        Question: testQuestion,
+
+        // Add a qualification requirement that the Worker must be either in Canada or the US 
+        QualificationRequirements: [
+            {
+                QualificationTypeId: '00000000000000000071',
+                Comparator: 'In',
+                LocaleValues: [
+                    { Country: 'US' },
+                    { Country: 'CA' },
+                    { Country: 'IL' },
+                ],
+            },
+			{
+				QualificationTypeId: '3WZ6PU0JYUIA21NG42RS71S738CLKC',
+				Comparator: 'LessThanOrEqualTo',
+				IntegerValues: [16],
+				RequiredToPreview: false
+			}
+        ],
+    };
+
 
 function saveWord( k, cw ){
 	
@@ -16,8 +87,156 @@ function saveWord( k, cw ){
 		     } )
 			} else if( cw!= word )
 			  return next(err)
-	    } )
+	    } );
 }
+
+function WorkersData(){
+	this. workers= {};
+}
+var workersData= new WorkersData();
+
+function HITsData_(){
+	this. HITs= {};
+}
+var HITsData= new HITsData_();
+
+function AssignementsData_(){
+	this. assignements= {};
+}
+var assignementsData= new AssignementsData_();
+
+AssignementsData_.prototype.updateAssignment= function( ASSid, func ){
+	var err= null, data= null;
+	// update assignment here and in db
+	// update corresponding hit and 
+	// update corresponding worker
+	func(err, data);
+}
+
+function syncHITsData( hData, func ){
+  var err=null;
+  var aData= null;
+  HITsData.HITs[hData['HITId']]= hData;  
+  sch.MturkHIT.findOne( {HITid:hData['HITId']}, (err,data) => {
+		if(data){
+  		//either update or ignore
+			data['HITdata']= hData;
+			sch.MturkHIT.update( {HITid:hData['HITId']}, {HITdata: hData}, (err, data)=> {
+				console.log(err, data);
+			 })
+		} else {
+			sch.MturkHIT.create(  {HITid:hData['HITId'], HITdata: hData}, (err, data)=> {
+				console.log(err, data);
+			}) 
+		}
+	} );
+  var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });  
+  if( hData['NumberOfAssignmentsAvailable'] < hData['MaxAssignments']  ){		
+		console.log( 'Some of the assignements are completed' )
+		mturk.listAssignmentsForHIT( { HITId: hData['HITId']} , function(err, data){
+	    console.log(err, data);
+	    if(data){
+				var k, as;
+				for( k=0; k< data['NumResults']; k++){
+					as= data['Assignments'][k];
+					sch.Assignment.findOne( {assignmentId: as['AssignmentId'] }, (err, data ) =>{
+						if(data){
+							
+						} else {
+					   sch.Assignment.create( {
+				      assignmentId: as['AssignmentId'],
+				      hitId: as['HITId'],
+				      turkSubmitTo: '--',
+				      workerId: as['WorkerId'], 
+				      data: JSON.stringify( as ),
+				      trialInfo: "{}",
+				      status: "mturk" }, (err, data ) => { 
+				        console.log( 'assignement creation: ', err )
+				      });
+						}
+					});
+					assignementsData[as['AssignmentId']]= as;
+					if( as['WorkerId'] in workersData.workers ){
+						curWa= workersData.workers[ as['WorkerId'] ];
+						if( as['AssignmentId'] in curWa['assignements'] ){}else{
+							curWa['assignements'].push( as['AssignmentId'] );
+							aData= as;
+						}
+					}
+				}
+			}
+		  func( err, aData );
+	  });
+	} else {
+   if( hData['NumberOfAssignmentsPending'] >0  ){
+		 
+   } else {
+    if( hData['NumberOfAssignmentsCompleted'] >0  ){
+	  }	
+	  else{
+			// 
+		}
+	 }
+	};
+}
+
+function synkWorkersData(wData, func ){
+  var err=null;
+  var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });
+  // search for worker in db
+  sch.WorkerData.findOne( { workerId:wData['WorkerId' ] }, function(err, data){
+	  console.log(err);
+	  if( data ){
+			workersData.workers[ wData['WorkerId' ] ]= { 'dbData': data, 'mTurkData': wData, 'assignements': [] };
+		} else {
+			// create record, although this may be useless
+			workersData.workers[ wData['WorkerId' ] ]= { 'dbData': null, 'mTurkData': wData, 'assignements': [] };
+			sch.WorkerData.create( {workerId: wData['WorkerId' ], data:"external"}  );
+		}
+		// read info about asignements
+		// the main purpose is to approve trials that are not yet approved and get data from server 
+const getAllQualifiedHITs= ( token, wList, func ) => {
+		var prm= {QualificationTypeId:'3ISNM39IK7QVTOB2KIEB03RTH4E0SZ'};
+		if( token ){
+		  prm['NextToken']= token;
+		}
+		mturk.listHITsForQualificationType( prm ,  (err, data) => {
+		if (err) console.log(err, err.stack); // an error occurred
+		else 
+		  {
+			console.log(data);           // successful response
+			if( data.NextToken ){
+			  if( wList ){
+				wList= wList.concat( data['HITs'] );
+			  } else{
+				wList= data['HITs'];
+			  }
+			  getAllQualifiedHITs( data.NextToken, wList, func ) 
+			} else {
+				func( wList );
+			}
+		 }
+		});
+	  }
+    getAllQualifiedHITs( null, null, ( hList ) => {
+		  console.log(hList);           // successful response
+		  // update HITs database
+		  // sort among assigned, not assigned, pending and completed
+		  // delete not assigned HITs
+ 		var k, processedK=0;;
+		for( k=0; k< hList.length; k++)
+		  syncHITsData( hList[k], (err, aData )=>{
+				processedK++;
+			  console.log( processedK, err )  
+			  if( processedK == hList.length ){
+					console.log('hits processed');
+					func( err );
+				}
+		  } ) 
+	  }); 
+	});
+}
+  
 
 function admin_post(req, res, next ){
   switch( req.url.slice(12) ){
@@ -30,6 +249,137 @@ function admin_post(req, res, next ){
 		saveWord(k, cw);
 	  }
 	  res.send(words)
+	 break;
+	case 'partial/updateFromMturk' :
+	  AWS.config= sch.GlobalData.AWSConfig;
+	  var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });
+	  var getAllQualified= ( token, wList, func ) => {
+		var prm= {QualificationTypeId:'3ISNM39IK7QVTOB2KIEB03RTH4E0SZ'};
+		if( token ){
+		  prm['NextToken']= token;
+		}
+		mturk.listWorkersWithQualificationType( prm ,  (err, data) => {
+		if (err) console.log(err, err.stack); // an error occurred
+		else 
+		  {
+			console.log(data);           // successful response
+			if( data.NextToken ){
+			  if( wList ){
+				wList= wList.concat( data['Qualifications'] );
+			  } else{
+				wList= data['Qualifications'];
+			  }
+			  getAllQualified( data.NextToken, wList, func ) 
+			} else {
+				func( wList );
+			}
+		 }
+		});
+	  }
+	  getAllQualified( null, null, ( wList ) => {
+		console.log(wList);           // successful response
+		var k, processedK=0;
+		for( k=0; k< wList.length; k++)
+		  synkWorkersData( wList[k], (err)=>{
+				processedK++;
+			console.log( err )  
+			  if( processedK== wList.length){
+					res.render("admin/freeRecall/Workers.partial.html", 
+					  { workers: workersData, assignements:assignementsData, hits: HITsData } )
+				}
+		  } )
+	  });
+	  //res.send( 'updating from Mturk' )
+	break;
+	case 'partial/workers' :
+	  // here we read from db (but we need the ability to update from Amazon)
+	  sch.WorkerData.find( (err, data) => {
+			if(data){
+				var k, wList=[], isExternal, dt;
+				for( k=0; k<data.length; k++ ){
+					if( typeof( data[k]['data'] ) == "string" &&  data[k]['data'] == "external" ){
+						isExternal= true;
+						dt= data[k]['data']
+					} else {
+						isExternal= false;
+						dt= JSON.parse(data[k]['data']);
+					  console.log( dt )
+					}
+					wList.push( {workerId:data[k]['workerId'], data: dt, isExternal: isExternal } )
+				}
+				console.log( wList )
+				res.render( "admin/freeRecall/Workers.partial.html", {wList:wList} )
+			}
+		} );
+	 break
+	case 'partial/HITs' :
+		sch.MturkHIT.find( (err,data) => {
+			if(data){
+				res.render( "admin/freeRecall/HITs.partial.html", {data:data} )
+			}
+		} );
+	 break;
+	case 'partial/approveHIT' :
+			AWS.config= sch.GlobalData.AWSConfig;
+			var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });
+			console.log(req.body);
+			mturk.approveAssignment( {AssignmentId: req.body['ASSid']}, (err, data) => {
+				if(err)
+					return next(err)
+				console.log( data );
+				// here we need to find next hit for review
+				assignementsData.updateAssignment( req.body['ASSid'], (err, data)=>{
+					if(err)
+					  return next(err)
+		sch.MturkHIT.find( (err,data) => {
+			if(data){
+				res.render( "admin/freeRecall/HITs.partial.html", {data:data} )
+			}
+		} );
+				} );
+				// first from database
+				// then update db from mturk
+			});
+	break;
+	case 'partial/submitHIT' :
+			AWS.config= sch.GlobalData.AWSConfig;
+			var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });
+			res.render( "admin/freeRecall/submitHIT.partial.html", 
+			  {externalQuestion:testQuestion,
+				 testHIT:testHIT,
+				 qualificationHIT:qualificationHIT
+				} )
+	break;
+	case 'partial/rejectHIT' :
+			AWS.config= sch.GlobalData.AWSConfig;
+			var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });
+	
+	break;
+	case 'partial/HITreview' :
+	   // we should load HIT from mturk directly
+			AWS.config= sch.GlobalData.AWSConfig;
+			var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });
+			mturk.listAssignmentsForHIT( { HITId: req.body['HITid'] } , (err, data) => {
+				if(err)
+					return next(err)
+				if(data){
+					console.log(data)
+					if( data['NumResults'] == 0 ){
+						console.log( 'update HIT' )
+						res.send('Not implemented yet')
+					} else {
+						// there are some assignements list them all in a table, 
+						// so that they can be cleicekd and reviewed
+						// and show the first one
+						parseXMLString( data['Assignments'][0]['Answer'],  (err, result) => {
+							console.log(result);
+							res.render( "admin/freeRecall/HITreview.partial.html", 
+							  {data:data, answer:result['QuestionFormAnswers']['Answer'], index:0 } )
+						});
+					}
+			  }
+			});
+			console.log( req.body )
 	 break;
 	default:
       res.send({url:req.url.slice(12)})	
@@ -233,46 +583,6 @@ router.get( '/*', function(req, res ){
 	break;
   }
 })
-
-var testQuestion="<ExternalQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd\">\
-  <ExternalURL>https://exp-mturk.1d35.starter-us-east-1.openshiftapps.com/freeRecall/random_trial/</ExternalURL>\
-  <FrameHeight>400</FrameHeight>\
-</ExternalQuestion>";
-
-var testHIT = {
-        Title: 'Free recall experiment',
-        Description: 'This is free recall experiment. You need to request "Run Today" qualification, which is automatically granted',
-        MaxAssignments: 1,
-        LifetimeInSeconds: 3600,
-        AssignmentDurationInSeconds: 600,
-        Reward: '0.07',
-        Question: testQuestion,
-
-        // Add a qualification requirement that the Worker must be either in Canada or the US 
-        QualificationRequirements: [
-            {
-                QualificationTypeId: '00000000000000000071',
-                Comparator: 'In',
-                LocaleValues: [
-                    { Country: 'US' },
-                    { Country: 'CA' },
-                    { Country: 'IL' },
-                ],
-            },
-            {
-				QualificationTypeId: '3ISNM39IK7QVTOB2KIEB03RTH4E0SZ',
-				Comparator: 'LessThanOrEqualTo',
-				IntegerValues: [10],
-				RequiredToPreview: true
-			},
-			{
-				QualificationTypeId: '3WZ6PU0JYUIA21NG42RS71S738CLKC',
-				Comparator: 'LessThanOrEqualTo',
-				IntegerValues: [16],
-				RequiredToPreview: false
-			}
-        ],
-    };
 
 router.post( '/*', function(req, res ){
   switch( req.url.slice(1) ){

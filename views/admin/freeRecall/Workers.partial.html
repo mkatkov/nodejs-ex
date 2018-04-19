@@ -1,0 +1,17 @@
+<table style="color:blue" border="1">
+	<tr>
+		<th>WorkerId</th>
+		<th>Worker Qualification</th>
+		<th>Experiments</th>
+	</tr>
+  <% {var k; for(k=0;k< wList.length; k++ ){ %>
+	 <tr>
+	<td onclick="workers.loadInfo('<%= wList[k]['workerId'] %>')"> <%= wList[k]['workerId'] %> 
+	</td>
+	<td><% if( wList[k]['isExternal']){ } else {%>
+		<%= wList[k]['data']['qualification'] %>	</td>
+		<% }%>
+	<td> ClickHere </td>
+	</tr>
+  <% }} %>
+</table>

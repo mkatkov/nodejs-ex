@@ -30,7 +30,8 @@ var AssignmentSchema = new mongoose.Schema({
 	workerId: { type: String, required: true },
 	resultSubmitted: {type: Date, required: false },
 	trialInfo: { type: String },
-	status: { type: String, required: true, index:true }
+	status: { type: String, required: true, index:true },
+	data:{ type: String, required: false }
 })
 
 var HITschema= new mongoose.Schema({

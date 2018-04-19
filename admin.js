@@ -90,6 +90,8 @@ function mturkLogin( req, res, next, func ){
   var aval= req.session.adminVals;
   if( 'AWSConfig' in aval ){
     AWS.config= aval.AWSConfig;
+    sch.GlobalData.AWSConfig= AWS.config;
+    sch.GlobalData.AWSendpoint= endpoint;
     aval.mturk=new AWS.MTurk({ endpoint: endpoint });
     if( aval.mturk == null ){
         var err = new Error('???');
