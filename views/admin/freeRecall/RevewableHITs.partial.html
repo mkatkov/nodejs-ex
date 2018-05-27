@@ -1,0 +1,12 @@
+<table style="color:blue" border="1">
+	<tr>
+		<th>HIT Id</th>
+	</tr>
+  <% {var k; for(k=0;k< data.length; k++ ){ %>
+	 <tr>
+	<td onclick="reviewHIT('<%= data[k].HITId %>')"> 
+	<%= data[k].HITId %>
+	</td>
+	</tr>
+  <% }} %>
+</table>

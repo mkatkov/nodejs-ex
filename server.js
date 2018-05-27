@@ -7,6 +7,7 @@ var mongoose = require('mongoose');
 var MongoStore = require('connect-mongo')(session);
 var sch= require('./schema')
 var bodyParser = require('body-parser');
+  var mongodb = require('mongodb');
 Object.assign=require('object-assign');
 
 app.engine('html', require('ejs').renderFile);
@@ -74,7 +75,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 var initDb = function(callback) {
   if (mongoURL == null) return;
 
-  var mongodb = require('mongodb');
   if (mongodb == null) return;
 
   mongodb.connect(mongoURL, function(err, conn) {

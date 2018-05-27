@@ -44,6 +44,7 @@ var testHIT = {
 			}
         ],
     };
+
 var qualificationHIT = {
         Title: 'Free recall experiment',
         Description: 'This is free recall experiment. You need to request "Run Today" qualification, which is automatically granted',
@@ -74,8 +75,7 @@ var qualificationHIT = {
     };
 
 
-function saveWord( k, cw ){
-	
+function saveWord( k, cw ){	
 		sch.Words.findOne( {wordId: k}, function( err, word ){
 		  if(err){
 			  return next(err)
@@ -311,7 +311,7 @@ function admin_post(req, res, next ){
 				res.render( "admin/freeRecall/Workers.partial.html", {wList:wList} )
 			}
 		} );
-	 break
+	 break;
 	case 'partial/HITs' :
 		sch.MturkHIT.find( (err,data) => {
 			if(data){
@@ -350,10 +350,72 @@ function admin_post(req, res, next ){
 				 qualificationHIT:qualificationHIT
 				} )
 	break;
+	case 'partial/submitQualificationHIT' :
+		AWS.config= sch.GlobalData.AWSConfig;
+		var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });
+	  var qHit= qualificationHIT;
+/*        Title: 'Free recall experiment',
+        Description: 'This is free recall experiment. You need to request "Run Today" qualification, which is automatically granted',
+        MaxAssignments: 1,
+        LifetimeInSeconds: 3600,
+        AssignmentDurationInSeconds: 600,
+        Reward: '0.07',
+        Question: testQuestion,
+*/
+      qHit['Title']= req.body['Title'];
+      qHit['Description']= req.body['Description'];
+      qHit['MaxAssignments']= req.body['MaxAssignments'];
+      qHit['LifetimeInSeconds']= req.body['LifetimeInSeconds'];
+      qHit['AssignmentDurationInSeconds']= req.body['AssignmentDurationInSeconds'];
+      qHit['Reward']= req.body['Reward'];
+      qHit['Question']= req.body['Question'];
+      mturk.createHIT(testHIT, function (err, hitData) {
+        if (err) {
+               console.log(err.message);
+			   return next(err);
+        } else {
+               console.log(hitData.HIT);
+			   var data= hitData.HIT;
+          sch.MturkHIT.create(  {
+                 title: data.title,
+			     description: data.Description,
+			     maxAssigments: data.MaxAssignement,
+			     lifetime: data.Lifetime ,
+			     duration: data.duration,
+			     reward: data.reward,
+			     url:  data.url,
+			     isURLInternal: data.isInternal,
+			     HITid : hitData.HIT.HITId,
+			     HITdata: hitData.HIT
+		       },
+               function( err, data ){
+		         if(err){
+			       console.log(err);
+				   return next(err);
+		         }
+				 console.log(data);
+		         res.send( "Hit submitted and stroed in db" );
+               });
+		   }
+	  });
+	break;
 	case 'partial/rejectHIT' :
 			AWS.config= sch.GlobalData.AWSConfig;
 			var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });
 	
+	break;
+	case 'partial/ReviewableHITs' :
+		AWS.config= sch.GlobalData.AWSConfig;
+		var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });
+		mturk.listReviewableHITs( {MaxResults: 100, Status: 'Reviewable' }, (err, data) => {
+		  if (err) {
+			 console.log(err, err.stack); // an error occurred
+			 return next(err);
+		  }
+          console.log(data);           // successful response
+		  // we need to sync it with database before showing
+		  res.render( "admin/freeRecall/RevewableHITs.partial.html", {data:data.HITs} );
+		});
 	break;
 	case 'partial/HITreview' :
 	   // we should load HIT from mturk directly
@@ -374,7 +436,8 @@ function admin_post(req, res, next ){
 						parseXMLString( data['Assignments'][0]['Answer'],  (err, result) => {
 							console.log(result);
 							res.render( "admin/freeRecall/HITreview.partial.html", 
-							  {data:data, answer:result['QuestionFormAnswers']['Answer'], index:0 } )
+							  {data:data, answer:result['QuestionFormAnswers']['Answer'], index:0 } );
+							// update db here
 						});
 					}
 			  }

@@ -1,6 +1,7 @@
 Workers
 <ul>
   <% {var k; for(k=0;k< hitIds.length; k++ ){ %>
-	<li onclick="hitPr.loadInfo('<%= hits[hitIds[k]].HITId %>')" class="hit_<%= hits[hitIds[k]].HITStatus%>" > <%= hits[hitIds[k]].HITId %> </li>  
+	<li onclick="hitPr.loadInfo('<%= hits[hitIds[k]].HITId %>')" class="hit_<%= hits[hitIds[k]].HITStatus%>" >
+    	<%= hits[hitIds[k]].HITId %> </li>  
   <% }} %>
 </ul>
