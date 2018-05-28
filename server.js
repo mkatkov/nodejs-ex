@@ -157,6 +157,18 @@ app.get( '/genericPages/*', function( req, res ){
   //res.send( relurl )
 } );
 
+app.post( '/genericResults/*', function( req, res ){
+  console.log( req.header('Referer') );
+  console.log( req.body );
+  sch.RecordedResults.create( {relurl:  req.header('Referer'),  content: JSON.stringify( req.body) },
+  function( err, data ){
+    if(err){
+	  console.log(err);
+	}
+    res.send( err )
+  });
+});
+
 // error handling
 app.use(function(err, req, res, next){
   console.error(err.stack);

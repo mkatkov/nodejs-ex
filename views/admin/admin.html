@@ -278,6 +278,23 @@ HitProcessor.prototype.loadInfo= function( hitId ){
       document.getElementById("ListOfHITs") );*/
 }
 
+function ResProcessor(){}
+var resPr= new ResProcessor();
+
+ResProcessor.prototype.renderList= function(){
+  console.log('resProcessor renderList');
+  getFillHTML( 'admin/partial/ListOfResults', {}, 
+      document.getElementById("ListOfResults") );
+}
+
+ResProcessor.prototype.loadResults= function( relurl ){
+  console.log('ResProcessor loadResults for '+ relurl );
+  serverResponse( 'admin/partial/getAllResults', {relurl:relurl}, 
+    (xhr) => { document.getElementById("GenericResultsContent").value=xhr.responseText;  }
+  );
+}
+
+
 function createNewHIT() {
   var data={
     title: document.getElementById( 'HIT_Title' ).value,
@@ -413,5 +430,23 @@ Mturk hits
   </div>
  </div>   
 </div>
+
+<div class="doubleborder" >
+  <div class="sandbox center" id="genericResultsCell" onclick="toogleCell('genericResultsCell', resPr );">+ Generic results </div>
+ <div id="genericResultsCellContent" style="display:none" >  
+ 
+  <div style="display:table-row">
+   <div name="list_of_content" style="display:table-cell;width:30%;" id="ListOfResults">
+     <!-- put here the list of -->
+       
+   </div>
+   <div style="display:table-cell;width:65%;">     
+	  <textarea style="width:65%" id="GenericResultsContent"> </textarea>
+   </div>
+  </div>
+ </div>   
+</div>
+
+
 </body>
 </html>

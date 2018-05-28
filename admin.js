@@ -340,6 +340,41 @@ function sendListOfStoredPages( req, res, next ){
      res.send( listOfStoredPagesTemplate({host:req.headers.host, data:data}) )
   } )	
 }
+
+router.post( '/partial/ListOfResults', function (req, res, next ) { 
+  if( req.session.user != 'admin' ){
+   var err = new Error('Not authorized! Go back!');
+          err.status = 400;
+          return next(err);
+  }
+  var query=sch.RecordedResults.find( );
+  query.select( "relurl" );
+  query.exec( function( err, data ){
+     if (err) {
+        return next(err);
+     }
+     //console.log(data);
+     res.render( 'admin/ListOfResults.partial.html', { data:data } ) 
+  } )	
+})
+
+
+router.post( '/partial/getAllResults', function (req, res, next ) { 
+  if( req.session.user != 'admin' ){
+   var err = new Error('Not authorized! Go back!');
+          err.status = 400;
+          return next(err);
+  }
+  console.log( req.body['relurl'] )
+  sch.RecordedResults.find( {relurl: req.body['relurl']}, function( err, data ){
+     if (err) {
+        return next(err);
+     }
+     console.log(data);
+     res.render( 'admin/GenericResults.partial.html', { data:data } ) 
+  } );
+})
+
 router.post( '/partial/ListOfStoredPages', function (req, res, next ) { 
   if( req.session.user != 'admin' ){
    var err = new Error('Not authorized! Go back!');

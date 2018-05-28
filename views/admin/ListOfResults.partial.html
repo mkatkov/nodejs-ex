@@ -1,0 +1,5 @@
+<ul>
+  <% {var k; for(k=0;k< data.length; k++ ){ %>
+	<li onclick="resPr.loadResults('<%= data[k].relurl %>')"> <%= data[k].relurl %> </li>  
+  <% }} %>
+</ul>

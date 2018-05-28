@@ -12,6 +12,12 @@ var HTML_PagesSchema = new mongoose.Schema({
 }
 )
 
+var RecordedResultsSchema= new mongoose.Schema({
+  content: { type: String, required: true},
+  relurl: { type: String, required : true }
+}
+)
+
 var MturkAuthSchema = new mongoose.Schema({
   AccessKey: { type: String, required: true},
   Secret: { type: String, required: true},
@@ -70,6 +76,7 @@ var HIT= mongoose.model('HIT', HITschema);
 var Words= mongoose.model('Words', WordsSchema);
 var Assignment= mongoose.model('Assignement', AssignmentSchema )
 var WorkerData= mongoose.model('WorkerData', WorkerDataSchema )
+var RecordedResults= mongoose.model('RecordedResults', RecordedResultsSchema)
 
 var schemas= { 
 	AdminPass: AdminPass, 
@@ -81,6 +88,7 @@ var schemas= {
 	Assignment: Assignment,
 	WorkerData:WorkerData,
 	GlobalData: new GlobalData(),
+	RecordedResults: RecordedResults
 }
 
 module.exports = schemas;
