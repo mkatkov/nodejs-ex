@@ -109,18 +109,6 @@ function local_data(){
 
 var local= new local_data();
 
-function serverResponse( addr, data, func ){
-  var xhr = new XMLHttpRequest();
-  xhr.open("POST", addr, true);
-
-  //Send the proper header information along with the request
-  //xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  xhr.setRequestHeader("Content-type", "application/json");
-
-  xhr.onreadystatechange = function() {//Call a function when the state changes.
-    if(xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) {
-        // Request finished. Do p
-
 function local_data(){
   var result = {},
     tmp = [];
@@ -241,11 +229,6 @@ function initExp(){
    local. mode= 'preview';
    local.assignmentId= '';
  } 
-}rocessing here.
-        func( xhr );
-    }
-  }
-  xhr.send( JSON.stringify( data ) ); 
 }
 
 function getFillHTML( addr, data, el ){

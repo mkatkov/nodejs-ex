@@ -233,17 +233,6 @@ function rejectHIT( HITid ){
 }
 
 function submitNewQualificationHIT(){
-/*
-     <div id="HITform"></div>
-     Title: <input id="HIT_Title" value="Free recall experiment" type="text"><br>
-     Description: <input id="HIT_Description" value="This is free recall experiment. You need to request &quot;Run Today&quot; qualification, which is automatically granted" type="text"><br>
-     MaxAssignments: <input id="HIT_MaxAssigmenents" value="1" type="text"><br>
-     LifetimeInSeconds: <input id="HIT_Lifetime" value="3600" type="text"><br>
-     AssignmentDurationInSeconds: <input id="HIT_Duration" value="600" type="text"><br>
-     Reward: <input id="HIT_Reward" value="0.07" type="text"><br>
-     Question URL: <textarea id="HIT_URL" rows="6" cols="50"> &lt;ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"&gt;  &lt;ExternalURL&gt;https://exp-mturk.1d35.starter-us-east-1.openshiftapps.com/freeRecall/random_trial/&lt;/ExternalURL&gt;  &lt;FrameHeight&gt;400&lt;/FrameHeight&gt;&lt;/ExternalQuestion&gt;" </textarea><br>
-   </div>
-*/
   var Title= document.getElementById("HIT_Title").value,
     Description= document.getElementById("HIT_Description").value,
 	MaxAssignments= document.getElementById("HIT_MaxAssigmenents").value,
@@ -251,11 +240,32 @@ function submitNewQualificationHIT(){
 	AssignmentDurationInSeconds= document.getElementById("HIT_Duration").value,
 	Reward= document.getElementById("HIT_Reward").value,
 	QuestionURL= document.getElementById("HIT_URL").value;
-    var frm= document.getElementById("mainDataWin");
+	
+	var data= { Title:Title, Description:Description, MaxAssignments:MaxAssignments, LifetimeInSeconds:LifetimeInSeconds, 
+		 AssignmentDurationInSeconds:AssignmentDurationInSeconds, Reward: Reward, Question:QuestionURL };
+	var frm= document.getElementById("mainDataWin");
 
-  getFillHTML( '/admin/freeRecall/partial/submitQualificationHIT', {}, frm );  
+  getFillHTML( '/admin/freeRecall/partial/submitQualificationHIT', data, frm );  
 	
 }
+
+function submitNewQualificationHIT(){
+  var Title= document.getElementById("HIT_Title").value,
+    Description= document.getElementById("HIT_Description").value,
+	MaxAssignments= document.getElementById("HIT_MaxAssigmenents").value,
+	LifetimeInSeconds= document.getElementById("HIT_Lifetime").value,
+	AssignmentDurationInSeconds= document.getElementById("HIT_Duration").value,
+	Reward= document.getElementById("HIT_Reward").value,
+	QuestionURL= document.getElementById("HIT_URL").value;
+	
+	var data= { Title:Title, Description:Description, MaxAssignments:MaxAssignments, LifetimeInSeconds:LifetimeInSeconds, 
+		 AssignmentDurationInSeconds:AssignmentDurationInSeconds, Reward: Reward, Question:QuestionURL };
+	var frm= document.getElementById("mainDataWin");
+
+  getFillHTML( '/admin/freeRecall/partial/submitExpHIT', data, frm );  
+	
+}
+
 
 </script>
 
@@ -269,7 +279,7 @@ function submitNewQualificationHIT(){
   <button class="OperationTabButton" onclick="changeOperationMode(event, 'mode')">SandBox</button>
   <button class="OperationTabButton" onclick="changeOperationMode(event, 'submitHIT')">Submit HIT</button>
 <%#  <button class="OperationTabButton" onclick="changeOperationMode(event, 'workers')">Workers</button> %>
-  <button class="OperationTabButton" onclick="changeOperationMode(event, 'HITs')">HITs</button>
+<%#  <button class="OperationTabButton" onclick="changeOperationMode(event, 'HITs')">HITs</button> %>
   <button class="OperationTabButton" onclick="changeOperationMode(event, 'ReviewableHITs')">reviewable HITs</button>
   <button class="OperationTabButton" onclick="changeOperationMode(event, 'HIT Review')">HIT Review</button>
 <div class="doubleborder fullwidth" id="mainDataWin">

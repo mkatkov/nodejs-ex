@@ -46,8 +46,8 @@ var testHIT = {
     };
 
 var qualificationHIT = {
-        Title: 'Free recall experiment',
-        Description: 'This is free recall experiment. You need to request "Run Today" qualification, which is automatically granted',
+        Title: 'Free recall qualification',
+        Description: 'This is free recall qualification experiment. If you pass this qualification experiment you get more taksk. You additionally need to request "Run Today" qualification, which is automatically granted',
         MaxAssignments: 1,
         LifetimeInSeconds: 3600,
         AssignmentDurationInSeconds: 600,
@@ -362,6 +362,7 @@ function admin_post(req, res, next ){
         Reward: '0.07',
         Question: testQuestion,
 */
+      console.log(req.body);
       qHit['Title']= req.body['Title'];
       qHit['Description']= req.body['Description'];
       qHit['MaxAssignments']= req.body['MaxAssignments'];
@@ -369,7 +370,57 @@ function admin_post(req, res, next ){
       qHit['AssignmentDurationInSeconds']= req.body['AssignmentDurationInSeconds'];
       qHit['Reward']= req.body['Reward'];
       qHit['Question']= req.body['Question'];
-      mturk.createHIT(testHIT, function (err, hitData) {
+      mturk.createHIT( qHit, function (err, hitData) {
+        if (err) {
+               console.log(err.message);
+			   return next(err);
+        } else {
+               console.log(hitData.HIT);
+			   var data= hitData.HIT;
+          sch.MturkHIT.create(  {
+                 title: data.title,
+			     description: data.Description,
+			     maxAssigments: data.MaxAssignement,
+			     lifetime: data.Lifetime ,
+			     duration: data.duration,
+			     reward: data.reward,
+			     url:  data.url,
+			     isURLInternal: data.isInternal,
+			     HITid : hitData.HIT.HITId,
+			     HITdata: hitData.HIT
+		       },
+               function( err, data ){
+		         if(err){
+			       console.log(err);
+				   return next(err);
+		         }
+				 console.log(data);
+		         res.send( "Hit submitted and stroed in db" );
+               });
+		   }
+	  });
+	break;
+	case 'partial/submitExpHIT' :
+		AWS.config= sch.GlobalData.AWSConfig;
+		var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });
+	  var qHit= testHIT;
+/*        Title: 'Free recall experiment',
+        Description: 'This is free recall experiment. You need to request "Run Today" qualification, which is automatically granted',
+        MaxAssignments: 1,
+        LifetimeInSeconds: 3600,
+        AssignmentDurationInSeconds: 600,
+        Reward: '0.07',
+        Question: testQuestion,
+*/
+      console.log(req.body);
+      qHit['Title']= req.body['Title'];
+      qHit['Description']= req.body['Description'];
+      qHit['MaxAssignments']= req.body['MaxAssignments'];
+      qHit['LifetimeInSeconds']= req.body['LifetimeInSeconds'];
+      qHit['AssignmentDurationInSeconds']= req.body['AssignmentDurationInSeconds'];
+      qHit['Reward']= req.body['Reward'];
+      qHit['Question']= req.body['Question'];
+      mturk.createHIT( qHit, function (err, hitData) {
         if (err) {
                console.log(err.message);
 			   return next(err);

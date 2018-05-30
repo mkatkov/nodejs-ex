@@ -17,12 +17,12 @@
      LifetimeInSeconds: <input type="text" id="HIT_Lifetime" value="<%= qualificationHIT.LifetimeInSeconds %>"><br>
      AssignmentDurationInSeconds: <input type="text" id="HIT_Duration" value="<%= qualificationHIT.AssignmentDurationInSeconds %>"><br>
      Reward: <input type="text" id="HIT_Reward" value="<%= qualificationHIT.Reward %>"><br>
-     Question URL: <textarea id="HIT_URL"  rows="6" cols="50"> <%= qualificationHIT.Question %>" </textarea><br>
+     Question URL: <textarea id="HIT_URL"  rows="6" cols="50"> <%= qualificationHIT.Question %></textarea><br>
    </div>
 </div>
 <div id='recallHIT'  style="display:none" id="recallHITpane" > recall HIT
    <div name="page_content" style="display:table-cell;width:65%;">     
-     <input type="text" id="HITid"> <button name="new" onclick="submitNewQualificationHIT()"> submit </button>
+     <input type="text" id="HITid"> <button name="new" onclick="submitNewExpHIT()"> submit </button>
      <!-- <button name="store" onclick="removeCurrentHTMLPage()"> remove </button> -->
      <div id="HITform"></div>
      Title: <input type="text" id="HIT_Title" value="<%= testHIT.Title %>"><br>
@@ -31,6 +31,6 @@
      LifetimeInSeconds: <input type="text" id="HIT_Lifetime" value="<%= testHIT.LifetimeInSeconds %>"><br>
      AssignmentDurationInSeconds: <input type="text" id="HIT_Duration" value="<%= testHIT.AssignmentDurationInSeconds %>"><br>
      Reward: <input type="text" id="HIT_Reward" value="<%= testHIT.Reward %>"><br>
-     Question URL: <textarea id="HIT_URL"  rows="6" cols="50"> <%= testHIT.Question %>" </textarea><br>
+     Question URL: <textarea id="HIT_URL"  rows="6" cols="50"> <%= testHIT.Question %></textarea><br>
    </div>
 </div>
