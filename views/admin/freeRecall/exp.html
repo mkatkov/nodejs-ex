@@ -109,23 +109,6 @@ function local_data(){
 
 var local= new local_data();
 
-function local_data(){
-  var result = {},
-    tmp = [];
-  var items = location.search.substr(1).split("&");
-  for (var index = 0; index < items.length; index++) {
-        tmp = items[index].split("=");
-        result[tmp[0]] = decodeURIComponent( tmp[1] );
-  }
-  this.prm=result;
-  this.trialNum= -1;
-  this.numWords= 4;
-  this.wordTime= 2000;
-  this.responseTime= 20000;
-}
-
-var local= new local_data();
-
 function serverResponse( addr, data, func ){
   var xhr = new XMLHttpRequest();
   xhr.open("POST", addr, true);
@@ -146,89 +129,7 @@ function serverResponse( addr, data, func ){
 function getFillHTML( addr, data, el ){
   serverResponse( addr, data, function (xhr){
     el.innerHTML = xhr.responseText;
-} );
-}
-
-function recordResposnes(){
-  var el= document.getElementById( "wordPresentationFrame");
-  el.innerHTML='<input type="text" id="responseBox" >';
-  var input = document.getElementById("responseBox");
-  input.focus();
-  local.startRecall= new Date()
-  var words=[ ];
-  input.addEventListener("keyup", function(event) {
-  // Cancel the default action, if needed
-  event.preventDefault();
-  // Number 13 is the "Enter" key on the keyboard
-    if (event.keyCode === 13) {
-      // Trigger the button element with a click
-      words.push( [ input.value, new Date()] );
-      input.value= '';
-    }
-  });
-  
-  window.setTimeout( function(){
-    serverResponse( '/freeRecall/results', 
-      {   words:words, 
-		  local: local }, function( xhr ) {
-	  el.innerHTML= xhr.responseText;
-    // submit to amazon here
-    document.getElementById( "response_words").value= JSON.stringify(local.presentedWords)
-    document.getElementById( "response_response").value= JSON.stringify(words)
-    document.getElementById( "response_trialNum").value= JSON.stringify(local)
-    document.getElementById( "response_assignmentId").value= local.assignmentId   
-    document.getElementById( "response_form").submit();
-    });
-  }, local.responseTime )
-}
-
-function runExperiment(){
-  var iel= document.getElementById( "introduction");
-  iel.style.display='none';
-  document.getElementById( "experiment").style.display='block';
-  var el= document.getElementById( "wordPresentationFrame");
-  serverResponse( '/freeRecall/random_trial_data/4', {}, function( xhr )
-  {
-	console.log("resp: ", xhr.responseText);
-	var words= JSON.parse(xhr.responseText);
-	local.presentedWords= words;
-	console.log("got response")
-	console.log(words);
-	var wi=0;
-	var timer;
-	timer = setInterval( function(){
-      if( wi == words.length ){
-		window.clearInterval( timer );
-		el.innerHTML="";
-		window.setTimeout( recordResposnes, 5000 )
-	  } else {
-        el.innerHTML=words[wi]
-        wi+=1;		  
-	  }
-	}, local.wordTime )
-  })
-  
-  // show response box 
-}
-
-function initExp(){
- document.getElementById( "JSmessage").style.display='none';  
- document.getElementById( "introduction").style.display='block';  
- 
- if( 'assignmentId' in local.prm ){
-	console.log( 'assignmentId in prm' )
-    local.assignmentId= local.prm['assignmentId'];
-	if( local.prm['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' ){
-	  console.log( 'preview' )
-	  local.mode= 'preview';	  
-	} else {
-	  console.log( 'real assigmenent' )
-	  local.mode= 'real';
-	}
- } else {
-   local. mode= 'preview';
-   local.assignmentId= '';
- } 
+  } );
 }
 
 function getFillHTML( addr, data, el ){

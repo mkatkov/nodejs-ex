@@ -7,7 +7,7 @@ var parseXMLString = require('xml2js').parseString;
 
 var testQuestion="<ExternalQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd\">\
   <ExternalURL>https://exp-mturk.1d35.starter-us-east-1.openshiftapps.com/freeRecall/random_trial/</ExternalURL>\
-  <FrameHeight>400</FrameHeight>\
+  <FrameHeight>450</FrameHeight>\
 </ExternalQuestion>";
 
 var testHIT = {
@@ -464,7 +464,7 @@ function admin_post(req, res, next ){
 			 return next(err);
 		  }
           console.log(data);           // successful response
-		  // we need to sync it with database before showing
+		  // we need to sync it with database before showing - only assignements stored in db should be shown
 		  res.render( "admin/freeRecall/RevewableHITs.partial.html", {data:data.HITs} );
 		});
 	break;
