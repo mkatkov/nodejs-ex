@@ -557,7 +557,7 @@ router.get( '/*', function(req, res ){
 	  } 
 	  else if( req.url.indexOf( "random_trial/" ) ==1  ){
 		var prm= {numWords:'/16', wordTime:2000, responseTime: 120000, trialNum:-1 };
-		console.log( 'rnadom_trial/...' )
+		console.log( 'random_trial/...' )
 		// also record the assignement if it is from amazon
 		if( 'assignmentId' in req.query ){
 	     if( req.query['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' ){
@@ -638,7 +638,7 @@ router.get( '/*', function(req, res ){
 					   } )
 				  prm['qualification']= true
 				  prm['numWords']= '/4';
-				  prm['responseTime']= 60000;
+				  prm['responseTime']= 20000;
 			   }
 			   // we want to create record with an assignement that later will be updated
 			   sch.Assignment.findOne( {assignmentId: req.query['assignmentId']}, 
@@ -827,18 +827,27 @@ router.post( '/*', function(req, res ){
 					console.log( 'found worker ', err, ' data ', wdata )
 					if( wdata ){
 					  var wd= JSON.parse( wdata.data );
-					  wd['trialNum'] ++;
+					  
+					  // We need to check if trialNum is reset. or get run today qualification
+					  
+					  if( (wd['lastTrialTime']- Date.now())/1000/3600 > 16 ){
+						wd['trialNum']=0;
+					  }
+				      else{
+					    wd['trialNum'] ++;
+					  }
 					  wd['lastTrialTime']= Date.now();
-					    wdata.update( {data: JSON.stringify( wd ) }, ( err, data2) => {
+					  wdata.update( {data: JSON.stringify( wd ) }, ( err, data2) => {
 						  if (err) console.log(err, err.stack); // an error occurred
 						  else {
 							console.log( 'worker data updated ', data);           // successful response
+							
 					        if( wd['trialNum'] >16  ){
 					          res.send( 'Please come tomorrow' );
 							} else {
 							  // create new HIT
 							  AWS.config= sch.GlobalData.AWSConfig;
-							  //console.log(  AWS.config )
+							  console.log(  AWS.config )
 							  //console.log(  sch.GlobalData.AWSendpoint )
 							  var mturk=new AWS.MTurk({ endpoint: sch.GlobalData.AWSendpoint });
 							  // update numTodayTrials qualification
@@ -865,8 +874,6 @@ router.post( '/*', function(req, res ){
 							}
 						  }
 					    });
-					  //TODO:
-					  // check the date for last trial if difference more that 16 hours reset
 					}
 				  });
 				  // submit another hit if less than an hour working

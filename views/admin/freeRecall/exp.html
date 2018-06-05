@@ -69,6 +69,17 @@ height: 300px;
 .right_corner{
   float:right;  
 }
+    
+#consentDiv {
+  font-size:9pt;
+  font-family: Arial, Helvetica;
+  padding:10px;
+  border:1px dashed gray;
+  max-width: 600px;
+  margin: 0 auto;
+  margin-top: 30px;
+}
+
 
 </style>
  
@@ -221,7 +232,7 @@ function initExp(){
 }
 </script>
 <% } %> 
-<% if (prm['qualification']) {%>
+<% if (prm['qualification'] && false) {%>
 <script type="text/javascript">
 	var introPage= 0;
 	function nextIntroPage(){
@@ -247,11 +258,11 @@ function initExp(){
 
 </head>
 <body>
-<div class="expFrame" id="introduction" <%- style %>>
+<div id="introduction" <%- style %>>
 <% if (prm['qualification']) {%>
-<button class="right_corner" onclick="nextIntroPage()">next page</button>
+<%# <button class="right_corner" onclick="nextIntroPage()">next page</button> %>
 <% } %>
-<h1>Welcome to Free Recall experiment!</h1>
+<h3>Instructions:</h1>
 
 <% if (prm['qualification']) {%>
 <p class="bold">
@@ -261,17 +272,12 @@ function initExp(){
 <% } %>
 <div >
 <p>
-You will be presented with the words. One word every 3 seconds. 
-We would like to ask you to memorize presented words. 
-When all words will be presented an empty screen appears. 
-In 5 seconds you will get the form where you would 
-type all words that you remember. 
-One by one, hitting "Enter" button when you finish typing a single word.
+You will be presented with list of words flashed on the screen one after another.
+After presentation finishes, you need to type all words you can recall one at a time, separated by "ENTER" key press.
+You would have a limited time to type words, after which results would be automatically submitted to server.
 </p><p>
-This is a scientific experiment, and we relay on your cooperation. 
-Please do not record presented words, use your memory, otherwise we would not undestand how brain works.
-The completion of the task does not depend on the number of words you will type in. Try to do your best, 
-but this is known to be a challenging task.
+This is a challenging taks, no one expect you to recall all presented words. 
+Nevertheless, we ask you to concentrate on this task for next 2 and half minutes, otherwise we would not be able to undestand how our brain works.
 </p>
 
 <% if (prm['qualification']) {%>
@@ -286,10 +292,18 @@ but this is known to be a challenging task.
  If your speed is not much slower than an average typing speed for Native English speaking persons you will 
  get access for the real experiment. 
 </p>  
+<button name="Start" onclick= "runExperiment()" > Start </button>
 <% } else { %>
 <button name="Start" onclick= "runExperiment()" > Start </button>
 <% } %>
 </div>
+    <!-- Consent statement at bottom: -->
+    <div id='consentDiv'><p><u>Consent to Participate in Research:</u></p>
+        <p>By answering the following questions, you are participating in a study being performed by cognitive scientists in the Weizmann Institute Neurobiology Department. The purpose of this research is to examine human memory recall. By participating you are confirming that you are over 18 years of age and have normal or corrected-to-normal vision. </p>
+        <p> If you have questions about this research, or if you would like to receive a report of this research when it is completed please contact Mikhail Katkov at mikhail.katkov@weizmann.ac.il. Your participation in this research is completely voluntary. </p>
+        <p> If you choose to participate, you may change your mind and leave the study at any time. Refusal to participate or stopping your participation will involve no penalty or loss of benefits to which you are otherwise entitled. You may decline to answer any or all of the following questions. Your anonymity is assured; the researchers who have requested your participation will not receive any personal information about you. For questions, concerns, or complaints that are not being addressed by the researcher, or research-related harm contact:  Committee on the Use of Human Subjects in Research at Weizmann Institute of Science, 234 Herzl St. PO Box 26 Rehovot 7610001 Israel, Tel. +972-8-934-2111. Email: irb@weizmann.ac.il. </p>
+        <p> By continuing, you are confirming that you understand these instructions and conditions of participation. </p>
+    </div>
 </div>
 
 <% if( ! prm['preview'] ){ %>
